@@ -101,6 +101,7 @@ export interface TypeScriptResolversPluginConfig extends RawResolversConfig {
    * ```
    */
   customResolverFn?: string;
+  customSubscriptionObject?: string;
   /**
    * @description Allow you to override the `ParentType` generic in each resolver, by avoid enforcing the base type of the generated generic type.
    *

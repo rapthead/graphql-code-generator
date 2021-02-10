@@ -132,12 +132,26 @@ export type ResolverFn<TResult, TParent, TContext, TArgs> = (
     defsToInclude.push(defaultResolverFn);
   }
 
-  const header = `${indexSignature}
-
-${visitor.getResolverTypeWrapperSignature()}
-
-${defsToInclude.join('\n')}
-
+  if (config.customSubscriptionObject) {
+    const parsedMapper = parseMapper(config.customSubscriptionObject);
+    if (parsedMapper.isExternal) {
+      if (parsedMapper.default) {
+        prepend.push(`${importType} SubscriptionObject from '${parsedMapper.source}';`);
+      } else {
+        prepend.push(
+          `${importType} { ${parsedMapper.import} ${
+            parsedMapper.import !== 'SubscriptionObject' ? 'as SubscriptionObject ' : ''
+          }} from '${parsedMapper.source}';`
+        );
+      }
+      prepend.push(`export${config.useTypeImports ? ' type' : ''} { SubscriptionObject };`);
+    } else {
+      prepend.push(
+        `export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, TArgs> = ${parsedMapper.type}`
+      );
+    }
+  } else {
+    const defaultSubscriptionObject = `
 export type SubscriptionSubscribeFn<TResult, TParent, TContext, TArgs> = (
   parent: TParent,
   args: TArgs,
@@ -164,7 +178,16 @@ export interface SubscriptionResolverObject<TResult, TParent, TContext, TArgs> {
 
 export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, TArgs> =
   | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
-  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
+  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;`;
+
+    defsToInclude.push(defaultSubscriptionObject);
+  }
+
+  const header = `${indexSignature}
+
+${visitor.getResolverTypeWrapperSignature()}
+
+${defsToInclude.join('\n')}
 
 export type SubscriptionResolver<TResult, TKey extends string, TParent = {}, TContext = {}, TArgs = {}> =
   | ((...args: any[]) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>)
